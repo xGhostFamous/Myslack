@@ -183,4 +183,6 @@ int main(/*int argc, char *argv[]*/) {
     cust_registration(&serveur);
     gen_chat(&serveur);
   }
+  close(my_socket);
+  close(socket_2);
 }

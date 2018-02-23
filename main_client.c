@@ -144,4 +144,5 @@ int main(/*int argc, char *argv[]*/) {
   while(1) {
     en_gen_chat(&customer);
   }
+  close(my_socket);
 }
