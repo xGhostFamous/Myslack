@@ -8,6 +8,20 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+void  my_putchar(char c)
+{
+  write(1, &c, 1);
+}
+
+void    my_putstr(char *str)
+{
+  while (*str)
+  {
+    my_putchar(*str);
+    str++;
+  }
+}
+
 typedef struct s_server {
   int my_socket, socket_2; //descripteurs de sockets
   uint socket_len; //entier non signé pour la taille d'une structure
@@ -33,13 +47,13 @@ typedef struct s_customer {
 
 void init_serveur(t_server *serv) {
   memset(serv->buf,'\0',1024);        // initialisation du buffer qui sera utilisé
-  printf("Paramétrage réseau en cours, veuillez patienter...\n");
+  my_putstr("Paramétrage réseau en cours, veuillez patienter...\n");
   serv->socket_len = sizeof(struct sockaddr_in); //taille d'une structure sockaddr_in
   //Création de la socket réseau
   serv->my_socket = socket(AF_INET, SOCK_STREAM, 0);
   if(serv->my_socket == -1) 
     {
-      printf("Error opening socket \n");
+      my_putstr("Error opening socket \n");
       exit(1);
     }
   //Paramétrage de la struc d'adresse du serveur -> serv_addr
@@ -50,11 +64,11 @@ void init_serveur(t_server *serv) {
   //Association de la socket et des paramètres réseaux du serveur
   if ((bind(serv->my_socket, (struct sockaddr *) &serv->serv_addr, sizeof(serv->serv_addr))) < 0) 
     {
-      printf("Error bind \n");
+      my_putstr("Error bind \n");
       close(serv->my_socket);
       exit(1);
     } // on bind notre socket au port et a l'interface, et on verifie bien le retour
-  printf("Paramétrage terminé, le serveur est en route \n");
+  my_putstr("Paramétrage terminé, le serveur est en route \n");
 }
 
 void con_customer(t_server *serv) {
@@ -70,16 +84,16 @@ void con_customer(t_server *serv) {
     }
   if(select(serv->sockmax+1, &serv->fds, NULL, NULL, NULL) == -1) 
     {
-      perror("Erreur lors de l'appel a select");
+      my_putstr("Erreur lors de l'appel a select");
       exit (1);
     } //On utilise le select sur toutes les sockets y compris celle d'écoute
   if(FD_ISSET(serv->my_socket, &serv->fds)) 
     {
       serv->socket_2 = accept(serv->my_socket,(struct sockaddr *) &serv->cli_addr, &serv->socket_len);
       if (serv->socket_2 < 0)
-        printf("cannot accept\n");
+        my_putstr("cannot accept\n");
       else
-        printf("Con %s\n", inet_ntoa(serv->cli_addr.sin_addr)); //Connexion avec le client
+        my_putstr("Con %s\n", inet_ntoa(serv->cli_addr.sin_addr)); //Connexion avec le client
     } //Si la socket d'écoute est dans le fds -> Il a reçu quelque chose (connection d'un client)
     serv->taille++; //Qu'on ajoute au tableau des descripteurs
     serv->t[serv->taille -1] = serv->socket_2;
@@ -91,28 +105,28 @@ void cust_registration(t_server *cust) {
  // for(cust->k = 1; cust->k < cust->taille; cust->k++) { //On renvoie la chaine à tous les clients
     if(send(cust->socket_2, cust->msg_ac0, 1024, 0) == -1) 
       {
-        perror("Erreur lors de l'appel a send");
+        my_putstr("Erreur lors de l'appel a send");
         exit(1);
       }
     if(send(cust->socket_2, cust->msg_ac1, 1024, 0) == -1) 
       {
-        perror("Erreur lors de l'appel a send");
+        my_putstr("Erreur lors de l'appel a send");
         exit(1);
       }
     if(FD_ISSET(cust->my_socket, &cust->fds)) 
       { //Si une socket s'y trouve, alors un client a envoyer quelque chose
         if(recv(cust->t[cust->taille -1], &cust->customer->name, 10, 0) == -1) 
           {
-            perror("Erreur lors de la reception du message");
+            my_putstr("Erreur lors de la reception du message");
             exit(4);
           } //On stocke le message
-        printf("Ce client se nomme: %s", cust->customer->name);
+        my_putstr("Ce client se nomme: %s", cust->customer->name);
        /* cust->customer->t_name[cust->customer->x] = cust->customer->name;
         cust->customer->x++; */
       }
     if(send(cust->socket_2, cust->msg_ac2, 1024, 0) == -1) 
       {
-        perror("Erreur lors de l'appel a send");
+        my_putstr("Erreur lors de l'appel a send");
         exit(1);
       }
     memset(cust->choix,'\0', 2);
@@ -120,10 +134,10 @@ void cust_registration(t_server *cust) {
       { //Si une socket s'y trouve, alors un client a envoyer quelque chose
         if(recv(cust->t[cust->taille -1], &cust->choix, 2, 0) == -1) 
           {
-            perror("Erreur lors de la reception du message");
+            my_putstr("Erreur lors de la reception du message");
             exit(4);
           } //On stocke le message
-        printf("%s a choisi l'option %s", cust->customer->name, cust->choix);
+        my_putstr("%s a choisi l'option %s", cust->customer->name, cust->choix);
       }
 } 
 void gen_chat(t_server *serv) {
@@ -131,14 +145,14 @@ void gen_chat(t_server *serv) {
   for(serv->i = 1; serv->i < serv->taille; serv->i++) { //On parcours tous les autres descripteurs du tableau
     if(FD_ISSET(serv->t[serv->i], &serv->fds)) { //Si une socket s'y trouve, alors un client a envoyer quelque chose
       if(recv(serv->t[serv->i], &serv->buf, 1024, 0) == -1) {
-        perror("Erreur lors de la reception du message");
+        my_putstr("Erreur lors de la reception du message");
         exit(4);
       } //On stocke le message
-      printf(" %s\n", serv->buf);
+      my_putstr(" %s\n", serv->buf);
       for(serv->k = 1; serv->k < serv->taille -1; serv->k++) { //On renvoie la chaine à tous les clients
         if(serv->k != serv->i) {
           if(send(serv->t[serv->k], &serv->buf, 1024, 0) == -1) {
-            perror("Erreur lors de l'appel a send");
+            my_putstr("Erreur lors de l'appel a send");
             exit(1);
           }
         }
@@ -146,6 +160,9 @@ void gen_chat(t_server *serv) {
     }
   }
 }
+
+
+
 
 int main(/*int argc, char *argv[]*/) {
   t_server serveur;
@@ -157,7 +174,7 @@ int main(/*int argc, char *argv[]*/) {
   serveur.msg_ac2 = strdup("Bien maintenant, vous souhaitez:\n 1)Acceder au chat général\n 2)Voir les autres membres connectés\n 3)Voir les channels de discussion\n 4)Quitter le chat\n (veuillez choisir une valeur entre 1 et 4)");
   init_serveur(&serveur);
   listen(serveur.my_socket, 5); //On met le serveur en écoute avec un buffer de 5
-  printf("Le serveur est en attente d'une connexion... \n");
+  my_putstr("Le serveur est en attente d'une connexion... \n");
   serveur.sockmax = 0;
   serveur.t[0] = serveur.my_socket;
   serveur.taille++;
